@@ -14,11 +14,36 @@ fn main() {
         .and_then(|v| v.as_str())
         .unwrap_or("nvim");
 
-    // Generate unique session name
-    let session_name = generate_unique_session_name();
-
     // Fetch file argument (if any)
     let file_arg = env::args().nth(1).unwrap_or_default();
+
+    // Check if we're already inside tmux
+    if env::var("TMUX").is_ok() {
+        // If inside tmux, just run the editor directly
+        run_editor(&editor, &file_arg);
+    } else {
+        // If not inside tmux, create a new tmux session
+        create_tmux_session(&editor, &file_arg);
+    }
+}
+
+fn run_editor(editor: &str, file_arg: &str) {
+    let mut command = Command::new(editor);
+    if !file_arg.is_empty() {
+        command.arg(file_arg);
+    }
+
+    // Execute the editor command with inherited I/O
+    let _ = command
+        .stdin(Stdio::inherit())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .status();
+}
+
+fn create_tmux_session(editor: &str, file_arg: &str) {
+    // Generate unique session name
+    let session_name = generate_unique_session_name();
 
     // Build and execute tmux command efficiently
     let mut command = Command::new("tmux");
@@ -29,10 +54,10 @@ fn main() {
         .arg(editor);
 
     if !file_arg.is_empty() {
-        command.arg(&file_arg);
+        command.arg(file_arg);
     }
 
-    // Execute tmux command with inherited I/O to avoid bottleneck
+    // Execute tmux command with inherited I/O
     let _ = command
         .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
