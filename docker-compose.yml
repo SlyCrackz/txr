@@ -1,8 +1,0 @@
-services:
-  txr:
-    build: .
-    volumes:
-      - .:/usr/src/txr
-      - ./target:/usr/src/txr/target 
-    tty: true  # Ensures terminal access
-
